@@ -1,0 +1,85 @@
+import pygame
+import random
+import pandas as pd
+import time
+
+# Initialize Pygame
+pygame.init()
+
+# Setup window
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Time Perception Experiment")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+# Create clock
+clock = pygame.time.Clock()
+
+# Experiment settings
+num_trials = 10
+data = []
+font = pygame.font.Font(None, 36)
+
+for trial in range(num_trials):
+    screen.fill(BLACK)
+    text = font.render("Get Ready...", True, WHITE)
+    screen.blit(text, (WIDTH // 2 - 50, HEIGHT // 2))
+    pygame.display.flip()
+    time.sleep(1)  # Pause before trial
+    
+    # Randomly alter speed (baseline: 1.0, range: 0.6-1.4)
+    speed_factor = random.choice([0.6, 0.8, 1.0, 1.2, 1.4])
+    duration = 3.0 / speed_factor  # Adjust duration
+    
+    start_time = time.time()
+    x_pos = 0
+    reaction_start_time = None
+    
+    running = True
+    while running:
+        screen.fill(BLACK)
+        pygame.draw.circle(screen, WHITE, (int(x_pos), HEIGHT // 2), 20)
+        pygame.display.flip()
+        
+        x_pos += 5 * speed_factor
+        if x_pos > WIDTH:
+            running = False
+        
+        if time.time() - start_time > duration:
+            running = False
+        
+        clock.tick(60)
+    
+    # Ask user for perception feedback
+    screen.fill(BLACK)
+    text = font.render("Did time feel FASTER or SLOWER? (F/S)", True, WHITE)
+    screen.blit(text, (WIDTH // 4, HEIGHT // 2))
+    pygame.display.flip()
+    
+    response = None
+    reaction_time = None
+    reaction_start_time = time.time()
+    
+    while response is None:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_f:
+                    response = 'f'
+                elif event.key == pygame.K_s:
+                    response = 's'
+                reaction_time = time.time() - reaction_start_time  # Measure reaction time
+    
+    # Save results
+    data.append({'Trial': trial+1, 'Speed Factor': speed_factor, 'Response': response, 'Reaction Time': reaction_time})
+    
+    time.sleep(1)
+
+pygame.quit()
+
+# Save data to CSV
+csv_filename = "time_perception_results.csv"
+pd.DataFrame(data).to_csv(csv_filename, index=False)
+print(f"Experiment completed! Results saved to {csv_filename}")
